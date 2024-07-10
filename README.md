@@ -1,5 +1,5 @@
 This project presents a console application that allows you to manage user groups in VK in which the user is an administrator or owner.
-Working with groups is done by using the VC API and making queries directly inside the code.
+Working with groups is done by using the VK API and making queries directly inside the code.
 
 Features:
  - reading, editing and creating posts
