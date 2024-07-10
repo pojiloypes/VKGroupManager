@@ -7,20 +7,20 @@ using System.Security.Cryptography;
 
 namespace VKGroupManagerRequests
 {
-    class ServerLoader
+    public static class ServerLoader
     {
-        string server;
-        string accesTocken;
-        HttpClient client;
+        static string server;
+        static string accesTocken;
+        static HttpClient client;
 
-        public ServerLoader(string newServer, string newAccesTocken)
+        public static void run(string newServer, string newAccesTocken)
         {
             client = new HttpClient();
             server = newServer;
             accesTocken = newAccesTocken;
         }
 
-        public async Task<string> saveMediaObjectOnLocalMachine(string url, string postType)
+        public static async Task<string> saveMediaObjectOnLocalMachine(string url, string postType)
         {
             var bytes = new byte[8];
             using (var rng = new RNGCryptoServiceProvider())
@@ -29,18 +29,20 @@ namespace VKGroupManagerRequests
             }
             string hashFileName = BitConverter.ToString(bytes).Replace("-", "").ToLower();
 
-            string path = "C://Users//tyver//source//repos//WpfApp2//WpfApp2//currentSessionMeadiaObjects//";
-            string newName = postType + "_" + hashFileName + Path.GetExtension(url).Split("?")[0];
+            string newName, path = "currentSessionMeadiaObjects//";
+
+            newName = postType + "_" + hashFileName + Path.GetExtension(url).Split("?")[0];
 
             Stream fileStream = await client.GetStreamAsync(url);
             using (FileStream outputFileStream = new FileStream(path + newName, FileMode.CreateNew))
             {
                 await fileStream.CopyToAsync(outputFileStream);
             }
+
             return path + newName;
         }
 
-        private async Task<string> getServerToUploadPicture(int groupId)
+        private static async Task<string> getServerToUploadPicture(int groupId)
         {
             HttpResponseMessage responce = await client.GetAsync(server + "photos.getWallUploadServer?access_token=" + accesTocken + "&group_id=" + groupId + "&v=5.199");
             string responceText = await responce.Content.ReadAsStringAsync();
@@ -49,7 +51,7 @@ namespace VKGroupManagerRequests
         }
 
 
-        private async Task<string> getServerToUploadVideo(int groupId)
+        private static async Task<string> getServerToUploadVideo(int groupId)
         {
             HttpResponseMessage responce = await client.GetAsync(server + "video.save?access_token=" + accesTocken + "&group_id=" + groupId + "&v=5.199");
             string responceText = await responce.Content.ReadAsStringAsync();
@@ -58,7 +60,7 @@ namespace VKGroupManagerRequests
         }
 
 
-        private async Task<string> getServerToUploadObject(int groupId, string dataType)
+        private static async Task<string> getServerToUploadObject(int groupId, string dataType)
         {
             string address = "";
             switch (dataType)
@@ -75,7 +77,7 @@ namespace VKGroupManagerRequests
         }
 
 
-        private async Task<string> uploadObjectToServer(int groupId, string filePath)
+        private static async Task<string> uploadObjectToServer(int groupId, string filePath)
         {
             MultipartFormDataContent content = new MultipartFormDataContent();
             byte[] byteOfImage = System.IO.File.ReadAllBytes(filePath);
@@ -96,7 +98,7 @@ namespace VKGroupManagerRequests
             return responceText;
         }
 
-        private async Task<MultipartFormDataContent> getContentForSavePicture(int groupId, string filePath)
+        private static async Task<MultipartFormDataContent> getContentForSavePicture(int groupId, string filePath)
         {
             MultipartFormDataContent content = new MultipartFormDataContent();
             string responceFromServer = await uploadObjectToServer(groupId, filePath);
@@ -112,7 +114,7 @@ namespace VKGroupManagerRequests
             return content;
         }
 
-        private async Task<string> savePictureOnServer(int groupId, string filePath)
+        private static async Task<string> savePictureOnServer(int groupId, string filePath)
         {
             MultipartFormDataContent content = await getContentForSavePicture(groupId, filePath);
 
@@ -126,7 +128,7 @@ namespace VKGroupManagerRequests
             return fileIdent;
         }
 
-        private async Task<string> saveVideoOnServer(int groupId, string filePath)
+        private static async Task<string> saveVideoOnServer(int groupId, string filePath)
         {
             string fileIdent;
             string responceFromServer = await uploadObjectToServer(groupId, filePath);
@@ -138,7 +140,7 @@ namespace VKGroupManagerRequests
             return fileIdent;
         }
 
-        public async Task<string> getFileIdent(int groupId, string filePath)
+        public static async Task<string> getFileIdent(int groupId, string filePath)
         {
             string fileIdent = "";
 
@@ -155,9 +157,9 @@ namespace VKGroupManagerRequests
             return fileIdent;
         }
 
-        ~ServerLoader()
+        public static void Clear()
         {
-            DirectoryInfo dirInfo = new DirectoryInfo("C://Users//tyver//source//repos//WpfApp2//WpfApp2//currentSessionMeadiaObjects//");
+            DirectoryInfo dirInfo = new DirectoryInfo("currentSessionMeadiaObjects//");
 
             foreach (FileInfo file in dirInfo.GetFiles())
             {

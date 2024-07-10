@@ -15,11 +15,11 @@ namespace VKGroupManagerRequests
         JObject parsedResponce { get; set; }
         JToken jToken { get; set; }
 
-        ServerLoader serverLoader;
+        //ServerLoader serverLoader;
 
-        public JsonParser(ServerLoader server)
+        public JsonParser()
         {
-            serverLoader = server;
+            //serverLoader = server;
         }
 
         public User parseToGetUserProfileInfo() =>
@@ -54,16 +54,25 @@ namespace VKGroupManagerRequests
                     attachement.fileUrl = jToken[type]["url"].ToString();
                     break;
             }
-            attachement.filePath = await serverLoader.saveMediaObjectOnLocalMachine(attachement.fileUrl, type);
+            //attachement.filePath = await serverLoader.saveMediaObjectOnLocalMachine(attachement.fileUrl, type);
+            attachement.filePath = "";
         }
+
+       
 
         private async Task parseJsonToFillNewPost(Post newPost)
         {
             //newPost = jToken.ToObject<Post>();
+            newPost.Id = int.Parse(jToken["id"].ToString());
+            newPost.Text = jToken["text"].ToString();
+            newPost.Date = int.Parse(jToken["date"].ToString());
             newPost.attachements = new List<Attachement>();
             newPost.likesCount = int.Parse(jToken["likes"]["count"].ToString());
             newPost.commentsCount = int.Parse(jToken["comments"]["count"].ToString());
-            newPost.viewsCount = int.Parse(jToken["views"]["count"].ToString());
+            if (jToken["views"] != null)    // это поле может не появиться если просмотров 0 
+                newPost.viewsCount = int.Parse(jToken["views"]["count"].ToString());
+            else
+                newPost.viewsCount = 0;
             newPost.repostsCount = int.Parse(jToken["reposts"]["count"].ToString());
 
             var attaches = jToken["attachments"].Children().ToList();
@@ -74,6 +83,11 @@ namespace VKGroupManagerRequests
                 await parseJsonToFillNewAttachement(attachement);
                 newPost.attachements.Add(attachement);
             }
+        }
+
+        private DateTime UnixTimeToDateTime(string v)
+        {
+            throw new NotImplementedException();
         }
 
         public async Task<List<Post>> parseToGgetWallPosts()

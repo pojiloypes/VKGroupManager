@@ -11,8 +11,8 @@ namespace VKGroupManagerRequests
         static public string getFileType(string filePath)
         {
 
-            var filePAthSplited = filePath.Split(new char[] { '/', '/' });
-            string type = "", extension = filePAthSplited[filePAthSplited.Length - 1];
+            var filePathSplited = filePath.Split(new char[] { '/', '/' });
+            string type = "", extension = filePathSplited[filePathSplited.Length - 1];
 
             switch (extension.Split(new char[] { '.' })[1])
             {
@@ -40,8 +40,8 @@ namespace VKGroupManagerRequests
         }
         static public string getFileName(string filePath)
         {
-            var filePAthSplited = filePath.Split(new char[] { '/', '/' });
-            string extension = filePAthSplited[filePAthSplited.Length - 1];
+            var filePathSplited = filePath.Split(new char[] { '/', '/' });
+            string extension = filePathSplited[filePathSplited.Length - 1];
             ;
             return extension;
         }

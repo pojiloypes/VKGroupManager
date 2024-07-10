@@ -13,30 +13,46 @@ namespace VKGroupManagerRequests
     {
         HttpClient client;
         JsonParser jsonParser;
-        ServerLoader serverLoader;
         string server;
         string accesTocken;
         string appId;
-        
 
+        public async Task auth()
+        {
+            //https://oauth.vk.com/authorize?client_id=51772080&display=page&redirect_uri=https://oauth.vk.com/blank.html&scope=wall,groups,photos,video&response_type=token&v=5.131
+            if (!File.Exists("accesToken.txt"))
+                File.WriteAllText("accesToken.txt", "");
+
+            client = new HttpClient();
+            string readToken = TokenEncryptor.Decrypt(File.ReadAllText("accesToken.txt"));
+
+            HttpResponseMessage responce = await client.GetAsync(server + "account.getProfileInfo?access_token=" + readToken + "&v=5.199");
+            string responceText = await responce.Content.ReadAsStringAsync();
+            
+            while(responceText.Contains("error"))
+            {
+                Console.WriteLine("[X] Для получения доступа перейдите по данной ссылке и введите ссылку на странице после авторизации:\n" +
+                    "https://oauth.vk.com/authorize?client_id=51772080&display=page&redirect_uri=https://oauth.vk.com/blank.html&scope=wall,groups,photos,video&response_type=token&v=5.131");
+
+                readToken = Console.ReadLine(); 
+                readToken = readToken.Split("access_token=")[1].Split("&expires_in")[0];
+                responce = await client.GetAsync(server + "account.getProfileInfo?access_token=" + readToken + "&v=5.199");
+                responceText = await responce.Content.ReadAsStringAsync();
+            }
+
+            accesTocken = readToken;
+            ServerLoader.run(server, accesTocken);
+            jsonParser = new JsonParser();
+            File.WriteAllText("accesToken.txt", TokenEncryptor.Encrypt(accesTocken));
+
+        }
         public Manager()
         {
             server = "https://api.vk.com/method/";
-            accesTocken = "vk1.a.eZvNY22sx7SLIYRUffvmY4u5BPtdAuzEL6X7irbSX36wVfei9mjZpzgOQwwN0AlAiOLSV6lBxnEAbL-MHE8wBSO9I42Dkhc97sHtTva1YdF9XYx8cJqs1jYGNBehZ3DVmZ-dqiysd1-w1viQIUFmWwOCwqfZR-s3W-ludsdXKxLYehi6AfPdIfBXLobQWbv2qTBoR8JbRH2crGTcpwW1Ig&expires_in=86400&user_id=274020754";
             appId = "51772080";
-            client = new HttpClient();
-            serverLoader = new ServerLoader(server, accesTocken);
-            jsonParser = new JsonParser(serverLoader);
         }
 
-        public void auth()
-        {
-            //https://oauth.vk.com/authorize?client_id=51772080&display=page&redirect_uri=https://oauth.vk.com/blank.html&scope=wall,groups,photos,video&response_type=token&v=5.131
-            //https://oauth.vk.com/authorize?client_id=51772080&redirect_uri=https://oauth.vk.com/blank.html&scope=account&display=page&responce_type=token
-
-        }
-
-        public async Task<User> getProfileInfo()
+        public async Task<User> getProfileInfo() // Считать информаицю профиля
         {
             HttpResponseMessage responce = await client.GetAsync(server + "account.getProfileInfo?access_token=" + accesTocken + "&v=5.199");
             string responceText = await responce.Content.ReadAsStringAsync();
@@ -47,7 +63,7 @@ namespace VKGroupManagerRequests
             return user;
         }
 
-        public async Task<List<Group>> getGroupsList(int userId)
+        public async Task<List<Group>> getGroupsList(int userId)  // Получить список групп под управлением пользователя
         {
             HttpResponseMessage responce = await client.GetAsync(server + "groups.get?user_id=" + userId + "&access_token=" + accesTocken + "&extended=1&fields=membersCount&filter=admin&v=5.199");
             string responceText = await responce.Content.ReadAsStringAsync();
@@ -63,9 +79,9 @@ namespace VKGroupManagerRequests
             posts.Add(post);
         }
 
-        public async Task<List<Post>> getWallPosts(int userId)
+        public async Task<List<Post>> getWallPosts(int userId)  // Получить список постов группы
         {
-            HttpResponseMessage responce = await client.GetAsync(server + "wall.get?owner_id=-" + userId + "&access_token=" + accesTocken + "&extended=0&v=5.199");
+            HttpResponseMessage responce = await client.GetAsync(server + "wall.get?owner_id=-" + userId + "&access_token=" + accesTocken + "&count=500&extended=0&v=5.199");
             string responceText = await responce.Content.ReadAsStringAsync();
 
             jsonParser.responceText = responceText;
@@ -74,7 +90,18 @@ namespace VKGroupManagerRequests
             return posts;
         }
 
-        public async Task createPost(int groupId, string message)
+        public async Task<List<Post>> getWallPosts(int userId, int offset)  // Получить список постов группы со смещением
+        {
+            HttpResponseMessage responce = await client.GetAsync(server + "wall.get?owner_id=-" + userId + "&access_token=" + accesTocken + "&offset" + offset + "&count=500&extended=0&v=5.199");
+            string responceText = await responce.Content.ReadAsStringAsync();
+
+            jsonParser.responceText = responceText;
+            List<Post> posts = await jsonParser.parseToGgetWallPosts();
+
+            return posts;
+        }
+
+        public async Task createPost(int groupId, string message)  // Создать пост без вложений
         {
             var parametrs = new Dictionary<string, string>
             {
@@ -91,12 +118,12 @@ namespace VKGroupManagerRequests
             Console.WriteLine(responceText);
         }
 
-        private async Task<string> inputPostAttachments(int groupId)
+        private async Task<string> inputPostAttachments(int groupId)  // Ввести инфу о вложениях для поста
         {
             string fileIdent, attachments = "";
             List<string> fileIdents = new List<string>();
 
-            Console.Write("Хотите ли вы добавить файл?(Да\\Нет): ");
+            Console.Write("[X] Хотите ли вы добавить файл?(Да\\Нет): ");
             string addFilesAns = Console.ReadLine();
 
             while (addFilesAns == "Да" || (addFilesAns != "Да" && addFilesAns != "Нет"))
@@ -104,15 +131,17 @@ namespace VKGroupManagerRequests
                 if (addFilesAns != "Да" && addFilesAns != "Нет") Console.WriteLine("Неверный ответ");
                 else
                 {
-                    Console.Write("Введите ссылку на файл: ");
+                    Console.Write("[X] Введите ссылку на файл: ");
                     string filePath = Console.ReadLine().Replace("\\", "//");
                     if (FilePathHandler.getFileType(filePath) != "unsupported")
                     {
-                        fileIdent = await serverLoader.getFileIdent(groupId, filePath);
+                        fileIdent = await ServerLoader.getFileIdent(groupId, filePath);
                         fileIdents.Add(fileIdent);
                     }
+                    else
+                        Console.WriteLine("Неподдерживаемый формат файла");
                 }
-                Console.Write("Хотите ли вы добавить файл?(Да\\Нет): ");
+                Console.Write("[X] Хотите ли вы добавить файл?(Да\\Нет): ");
                 addFilesAns = Console.ReadLine();
             }
 
@@ -126,9 +155,9 @@ namespace VKGroupManagerRequests
             return attachments;
         }
 
-        public async Task createPostWithFile(int groupId)
+        public async Task createPostWithFile(int groupId) // Создать пост с вложением
         {
-            Console.Write("Введите текст сообщения: ");
+            Console.Write("[X] Введите текст сообщения: ");
             string message = Console.ReadLine();
 
 
@@ -145,17 +174,14 @@ namespace VKGroupManagerRequests
             var response = await client.PostAsync(server + "wall.post", new FormUrlEncodedContent(parametrs));
 
             var responceText = await response.Content.ReadAsStringAsync();
-            Console.WriteLine(responceText);
         }
 
-        public async Task deletePost(int groupId, int postId)
+        public async Task deletePost(int groupId, int postId) // Удалить пост
         {
             var result = await client.GetAsync(server + "wall.delete?owner_id=-" + groupId + "&post_id=" + postId + "&access_token=" + accesTocken + "&extended=0&v=5.199");
-            //Console.WriteLine("https://" + server + "wall.get?owner_id=-223100201&access_token=" + accesTocken + "&extended=0&v=5.199");
-            Console.WriteLine(await result.Content.ReadAsStringAsync());
         }
 
-        public async Task saveMediaObjectOnLocalMachine()
+        public async Task saveMediaObjectOnLocalMachine() // Сохранить влоежния поста на устройство пользователя
         {
             string path = "C://Users//tyver//source//repos//VKGroupManagerRequests//VKGroupManagerRequests//currentSessionMeadiaObjects";
             string newName = "//media.jpg";
@@ -164,6 +190,11 @@ namespace VKGroupManagerRequests
             {
                 await fileStream.CopyToAsync(outputFileStream);
             }
+        }
+
+        ~Manager()
+        {
+            ServerLoader.Clear();
         }
     }
 }
