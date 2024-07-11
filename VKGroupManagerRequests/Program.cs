@@ -225,7 +225,6 @@ namespace VKGroupManagerRequests
                         break;
                 }
             }
-            ////"C:\Users\tyver\source\repos\VKGroupManagerRequests\VKGroupManagerRequests\3dchelik.pdf"
         }
     }
 }
