@@ -19,7 +19,6 @@ namespace VKGroupManagerRequests
 
         public async Task auth()
         {
-            //https://oauth.vk.com/authorize?client_id=51772080&display=page&redirect_uri=https://oauth.vk.com/blank.html&scope=wall,groups,photos,video&response_type=token&v=5.131
             if (!File.Exists("accesToken.txt"))
                 File.WriteAllText("accesToken.txt", "");
 
