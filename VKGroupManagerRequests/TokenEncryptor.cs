@@ -7,9 +7,8 @@ namespace VKGroupManagerRequests
 {
     public static class TokenEncryptor
     {
-        // Ключ и вектор инициализации (IV) - замените их на свои значения
-        private static readonly byte[] Key = Encoding.UTF8.GetBytes("12345678901234567890123456789012"); // 32 байта
-        private static readonly byte[] IV = Encoding.UTF8.GetBytes("1234567890123456"); // 16 байт
+        private static readonly byte[] Key = Encoding.UTF8.GetBytes("12345678901234567890123456789012");
+        private static readonly byte[] IV = Encoding.UTF8.GetBytes("1234567890123456");
 
         public static string Encrypt(string plainText)
         {
