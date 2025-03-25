@@ -182,7 +182,7 @@ namespace VKGroupManagerRequests
 
         public async Task saveMediaObjectOnLocalMachine() // Сохранить влоежния поста на устройство пользователя
         {
-            string path = "C://Users//tyver//source//repos//VKGroupManagerRequests//VKGroupManagerRequests//currentSessionMeadiaObjects";
+            string path = "changeme";
             string newName = "//media.jpg";
             Stream fileStream = await client.GetStreamAsync("https://sun9-22.userapi.com/impg/ltFhdirVTh9Dfh4q-PydRbnGC11CYAlF5x5RJw/H5gB0Jjc_I8.jpg?size=510x510&quality=96&sign=1a805546b7e951b426ab353bf1863e32&c_uniq_tag=8PTQUHlN7NZdMYqGYUKbBLEdzs00vcSekNoMD_Z-iYM&type=album");
             using (FileStream outputFileStream = new FileStream(path + newName, FileMode.CreateNew))
